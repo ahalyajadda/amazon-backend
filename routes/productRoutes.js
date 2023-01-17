@@ -1,12 +1,13 @@
 import express from 'express';
-import Product from '../models/productModel.js';
 import expressAsyncHandler from 'express-async-handler';
+import Product from '../models/productModel.js';
 import { isAuth, isAdmin } from '../utils.js';
 
 const productRouter = express.Router();
 
 productRouter.get('/', async (req, res) => {
   const products = await Product.find();
+  console.log(products);
   res.send(products);
 });
 
@@ -45,7 +46,6 @@ productRouter.put(
       product.price = req.body.price;
       product.image = req.body.image;
       product.images = req.body.images;
-
       product.category = req.body.category;
       product.brand = req.body.brand;
       product.countInStock = req.body.countInStock;
@@ -138,13 +138,12 @@ productRouter.get(
   expressAsyncHandler(async (req, res) => {
     const { query } = req;
     const pageSize = query.pageSize || PAGE_SIZE;
+    const page = query.page || 1;
     const category = query.category || '';
-    const brand = query.brand || '';
     const price = query.price || '';
     const rating = query.rating || '';
     const order = query.order || '';
     const searchQuery = query.query || '';
-    const page = query.page || 1;
 
     const queryFilter =
       searchQuery && searchQuery !== 'all'
@@ -155,7 +154,7 @@ productRouter.get(
             },
           }
         : {};
-    const categoryfilter = category && category !== 'all' ? { category } : {};
+    const categoryFilter = category && category !== 'all' ? { category } : {};
     const ratingFilter =
       rating && rating !== 'all'
         ? {
@@ -167,6 +166,7 @@ productRouter.get(
     const priceFilter =
       price && price !== 'all'
         ? {
+            // 1-50
             price: {
               $gte: Number(price.split('-')[0]),
               $lte: Number(price.split('-')[1]),
@@ -185,9 +185,10 @@ productRouter.get(
         : order === 'newest'
         ? { createdAt: -1 }
         : { _id: -1 };
+
     const products = await Product.find({
       ...queryFilter,
-      ...categoryfilter,
+      ...categoryFilter,
       ...priceFilter,
       ...ratingFilter,
     })
@@ -197,11 +198,10 @@ productRouter.get(
 
     const countProducts = await Product.countDocuments({
       ...queryFilter,
-      ...categoryfilter,
+      ...categoryFilter,
       ...priceFilter,
       ...ratingFilter,
     });
-
     res.send({
       products,
       countProducts,
@@ -216,9 +216,9 @@ productRouter.get(
   expressAsyncHandler(async (req, res) => {
     const categories = await Product.find().distinct('category');
     res.send(categories);
-    console.log(categories);
   })
 );
+
 productRouter.get('/slug/:slug', async (req, res) => {
   const product = await Product.findOne({ slug: req.params.slug });
   if (product) {
@@ -229,7 +229,6 @@ productRouter.get('/slug/:slug', async (req, res) => {
 });
 productRouter.get('/:id', async (req, res) => {
   const product = await Product.findById(req.params.id);
-  // console.log(product);
   if (product) {
     res.send(product);
   } else {

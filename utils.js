@@ -16,9 +16,10 @@ export const generateToken = (user) => {
 };
 
 export const isAuth = (req, res, next) => {
+  console.log(req);
   const authorization = req.headers.authorization;
   if (authorization) {
-    const token = authorization.slice(7, authorization.length);
+    const token = authorization.slice(7, authorization.length); // Bearer XXXXXX
     jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
       if (err) {
         res.status(401).send({ message: 'Invalid Token' });
@@ -27,13 +28,13 @@ export const isAuth = (req, res, next) => {
         next();
       }
     });
+    console.log(req);
   } else {
     res.status(401).send({ message: 'No Token' });
   }
 };
 
 export const isAdmin = (req, res, next) => {
-  console.log(req);
   if (req.user && req.user.isAdmin) {
     next();
   } else {
